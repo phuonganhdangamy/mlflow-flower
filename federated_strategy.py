@@ -55,7 +55,10 @@ class CustomFedAvg(FedAvg):
             
             # Log the global model to MLflow
             if self.mlflow_run_id:
-                with mlflow.start_run(run_id=self.mlflow_run_id):
+                # Check if there's already an active run
+                active_run = mlflow.active_run()
+                if active_run and active_run.info.run_id == self.mlflow_run_id:
+                    # Use the existing active run
                     mlflow.pytorch.log_model(
                         self.global_model, 
                         f"global_model_round_{server_round}",
@@ -75,5 +78,28 @@ class CustomFedAvg(FedAvg):
                         mlflow.set_tag(cords_tags.CORDS_IMPLEMENTATION, "python")
                         mlflow.set_tag(cords_tags.CORDS_SOFTWARE, "pytorch")
                         print(f"Final global model logged to MLflow (Round {server_round})")
+                else:
+                    # Start a new run if no active run or different run ID
+                    with mlflow.start_run(run_id=self.mlflow_run_id):
+                        mlflow.pytorch.log_model(
+                            self.global_model, 
+                            f"global_model_round_{server_round}",
+                            registered_model_name=f"FederatedElectricityModel_Round_{server_round}"
+                        )
+                        mlflow.log_metric("server_round", server_round)
+                        
+                        # If it's the final round, also log as the final model
+                        if server_round == self.num_rounds:
+                            mlflow.pytorch.log_model(
+                                self.global_model, 
+                                "final_global_model",
+                                registered_model_name="FederatedElectricityModel_Final"
+                            )
+                            mlflow.set_tag("model_type", "final_global_model")
+                            mlflow.set_tag(cords_tags.CORDS_RUN_EXECUTES, "ANN")
+                            mlflow.set_tag(cords_tags.CORDS_IMPLEMENTATION, "python")
+                            mlflow.set_tag(cords_tags.CORDS_SOFTWARE, "pytorch")
+                            print(f"Final global model logged to MLflow (Round {server_round})")
+        
         
         return aggregated_parameters, aggregated_metrics
