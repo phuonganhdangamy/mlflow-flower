@@ -206,7 +206,7 @@ print_success "Port $SERVER_PORT is available"
 # Start Federated Learning server
 print_section "STARTING FEDERATED LEARNING SERVER"
 
-python server.py
+python server.py &
 
 SERVER_PID=$!
 print_success "Server started (PID: $SERVER_PID)"

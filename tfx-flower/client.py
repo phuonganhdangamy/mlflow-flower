@@ -429,7 +429,7 @@ if __name__=='__main__':
         client = TaxiFlowerClient(args.client_id)
 
         fl.client.start_client(
-            server_addess=args.server_address,
+            server_address=args.server_address,
             client=client
         )
     except Exception as e:
